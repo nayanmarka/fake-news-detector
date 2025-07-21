@@ -4,11 +4,11 @@ import joblib
 import sys
 import sklearn
 
-# 📌 Display version info (for debugging)
-st.sidebar.markdown("📦 **Python version:** " + sys.version.split()[0])
-st.sidebar.markdown("📚 **scikit-learn version:** " + sklearn.__version__)
+# Show environment info in sidebar
+st.sidebar.markdown(f"📦 **Python version:** {sys.version.split()[0]}")
+st.sidebar.markdown(f"📚 **scikit-learn version:** {sklearn.__version__}")
 
-# 📦 Safe model loader using joblib
+# Function to safely load models using joblib
 def load_model(path, model_name):
     try:
         return joblib.load(path)
@@ -16,17 +16,16 @@ def load_model(path, model_name):
         st.warning(f"⚠️ Could not load {model_name}: {e}")
         return None
 
-# 📁 Get current directory
+# Get current directory of app.py
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# 📂 Load vectorizer and models
+# Load vectorizer and models
 vectorizer = load_model(os.path.join(current_dir, "vectorizer.pkl"), "Vectorizer")
 LR = load_model(os.path.join(current_dir, "lr_model.pkl"), "Logistic Regression")
 DT = load_model(os.path.join(current_dir, "dt_model.pkl"), "Decision Tree")
 RF = load_model(os.path.join(current_dir, "rf_model.pkl"), "Random Forest")
 GB = load_model(os.path.join(current_dir, "gb_model.joblib"), "Gradient Boosting")
 
-# 🔍 Prediction logic
 def manual_testing(news):
     results = {}
     try:
@@ -47,7 +46,7 @@ def manual_testing(news):
         st.error(f"❌ Prediction failed: {e}")
     return results
 
-# 🌐 Streamlit UI
+# Streamlit UI
 st.title("📰 Fake News Detector")
 st.markdown("Enter a news article below to detect whether it's **Fake** or **Real** using multiple ML models.")
 
