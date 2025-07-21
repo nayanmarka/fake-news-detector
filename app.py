@@ -11,14 +11,16 @@ def load_model(path, model_name):
         st.warning(f"⚠️ Could not load {model_name}: {e}")
         return None
 
-# Get the current directory
+# Get current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Load models and vectorizer
+# Load vectorizer and models
 vectorizer = load_model(os.path.join(current_dir, "vectorizer.pkl"), "Vectorizer")
 LR = load_model(os.path.join(current_dir, "lr_model.pkl"), "Logistic Regression")
 DT = load_model(os.path.join(current_dir, "dt_model.pkl"), "Decision Tree")
 RF = load_model(os.path.join(current_dir, "rf_model.pkl"), "Random Forest")
+
+# Only try loading Gradient Boosting if you're sure it's compatible
 GB = load_model(os.path.join(current_dir, "gb_model.pkl"), "Gradient Boosting")
 
 # Manual prediction function
