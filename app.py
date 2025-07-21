@@ -55,17 +55,18 @@ def manual_testing(news):
         return {}
 
 # Streamlit UI
+st.set_page_config(page_title="Fake News Detector", layout="centered")
 st.title("📰 Fake News Detector")
 st.markdown("Enter a news article below to detect whether it's **Fake** or **Real** using multiple ML models.")
 
-news_input = st.text_area("Enter News Content", height=200)
+news_input = st.text_area("📝 Enter News Content", height=200)
 
 if st.button("Predict"):
     if news_input.strip() == "":
-        st.warning("Please enter some news content.")
+        st.warning("⚠️ Please enter some news content.")
     else:
         predictions = manual_testing(news_input)
         if predictions:
-            st.subheader("Prediction Results:")
+            st.subheader("📊 Prediction Results:")
             for model, result in predictions.items():
                 st.write(f"**{model}**: {result}")
