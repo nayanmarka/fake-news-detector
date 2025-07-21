@@ -44,3 +44,4 @@ if st.button("Predict"):
     st.write(f"**Gradient Boosting**: {pred_GB}")
     st.write(f"**Random Forest**: {pred_RF}")
 # update for github pus
+
