@@ -1,64 +1,53 @@
 import streamlit as st
-import pickle
 import os
+import joblib
+import sys
 import sklearn
 
-# --- Utility Function to Load Models Safely ---
+# 📌 Display version info (for debugging)
+st.sidebar.markdown("📦 **Python version:** " + sys.version.split()[0])
+st.sidebar.markdown("📚 **scikit-learn version:** " + sklearn.__version__)
+
+# 📦 Safe model loader using joblib
 def load_model(path, model_name):
     try:
-        with open(path, "rb") as file:
-            model = pickle.load(file)
-            return model
-    except FileNotFoundError:
-        st.warning(f"⚠️ {model_name} model file not found.")
-    except AttributeError as e:
-        st.warning(f"⚠️ {model_name} failed to load due to version mismatch.")
+        return joblib.load(path)
     except Exception as e:
         st.warning(f"⚠️ Could not load {model_name}: {e}")
-    return None
+        return None
 
-# --- Path Setup ---
+# 📁 Get current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# --- Load Vectorizer and Models ---
+# 📂 Load vectorizer and models
 vectorizer = load_model(os.path.join(current_dir, "vectorizer.pkl"), "Vectorizer")
 LR = load_model(os.path.join(current_dir, "lr_model.pkl"), "Logistic Regression")
 DT = load_model(os.path.join(current_dir, "dt_model.pkl"), "Decision Tree")
 RF = load_model(os.path.join(current_dir, "rf_model.pkl"), "Random Forest")
-GB = load_model(os.path.join(current_dir, "gb_model.pkl"), "Gradient Boosting")
+GB = load_model(os.path.join(current_dir, "gb_model.joblib"), "Gradient Boosting")
 
-# --- Prediction Function ---
+# 🔍 Prediction logic
 def manual_testing(news):
     results = {}
     try:
-        if not vectorizer:
-            st.error("❌ Vectorizer not loaded. Cannot proceed.")
-            return results
-
         news_vector = vectorizer.transform([news])
-
-        models = {
-            "Logistic Regression": LR,
-            "Decision Tree": DT,
-            "Random Forest": RF,
-            "Gradient Boosting": GB
-        }
-
-        for name, model in models.items():
-            if model:
-                try:
-                    pred = model.predict(news_vector)[0]
-                    results[name] = "FAKE" if pred == 0 else "REAL"
-                except Exception as e:
-                    results[name] = f"❌ Failed: {e}"
-            else:
-                results[name] = "⚠️ Not Loaded"
-
+        if LR:
+            pred = LR.predict(news_vector)[0]
+            results["Logistic Regression"] = "FAKE" if pred == 0 else "REAL"
+        if DT:
+            pred = DT.predict(news_vector)[0]
+            results["Decision Tree"] = "FAKE" if pred == 0 else "REAL"
+        if RF:
+            pred = RF.predict(news_vector)[0]
+            results["Random Forest"] = "FAKE" if pred == 0 else "REAL"
+        if GB:
+            pred = GB.predict(news_vector)[0]
+            results["Gradient Boosting"] = "FAKE" if pred == 0 else "REAL"
     except Exception as e:
         st.error(f"❌ Prediction failed: {e}")
     return results
 
-# --- Streamlit UI ---
+# 🌐 Streamlit UI
 st.title("📰 Fake News Detector")
 st.markdown("Enter a news article below to detect whether it's **Fake** or **Real** using multiple ML models.")
 
@@ -74,4 +63,4 @@ if st.button("Predict"):
             for model, result in predictions.items():
                 st.write(f"**{model}**: {result}")
         else:
-            st.error("❌ No predictions available.")
+            st.error("❌ No predictions available. All models might have failed.")
