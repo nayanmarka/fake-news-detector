@@ -2,23 +2,16 @@ import streamlit as st
 import pickle
 import os
 
-# Safely load model files with error handling
-def load_model(path, name):
+# Define a function to safely load models
+def load_model(path, model_name):
     try:
-        if os.path.exists(path):
-            with open(path, "rb") as file:
-                return pickle.load(file)
-        else:
-            st.warning(f"⚠️ Model file not found: {name}")
-            return None
-    except AttributeError:
-        st.error(f"❌ Failed to load model: {name} — AttributeError (possibly corrupted or incompatible file).")
-        return None
+        with open(path, "rb") as file:
+            return pickle.load(file)
     except Exception as e:
-        st.error(f"❌ Error loading model {name}: {e}")
+        st.error(f"❌ Failed to load model: {model_name} — {e}")
         return None
 
-# Get current directory
+# Get the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Load models and vectorizer
@@ -26,36 +19,21 @@ LR = load_model(os.path.join(current_dir, "lr_model.pkl"), "Logistic Regression"
 DT = load_model(os.path.join(current_dir, "dt_model.pkl"), "Decision Tree")
 RF = load_model(os.path.join(current_dir, "rf_model.pkl"), "Random Forest")
 GB = load_model(os.path.join(current_dir, "gb_model.pkl"), "Gradient Boosting")
-vectorization = load_model(os.path.join(current_dir, "vectorizer.pkl"), "TF-IDF Vectorizer")
+vectorization = load_model(os.path.join(current_dir, "vectorizer.pkl"), "Vectorizer")
 
-# Manual testing function
+# Define the prediction function
 def manual_testing(news):
-    try:
-        news_vector = vectorization.transform([news])
-        results = {}
-
-        if LR:
-            pred_LR = LR.predict(news_vector)[0]
-            results["Logistic Regression"] = "FAKE" if pred_LR == 0 else "REAL"
-        if DT:
-            pred_DT = DT.predict(news_vector)[0]
-            results["Decision Tree"] = "FAKE" if pred_DT == 0 else "REAL"
-        if RF:
-            pred_RF = RF.predict(news_vector)[0]
-            results["Random Forest"] = "FAKE" if pred_RF == 0 else "REAL"
-        if GB:
-            pred_GB = GB.predict(news_vector)[0]
-            results["Gradient Boosting"] = "FAKE" if pred_GB == 0 else "REAL"
-
-        return results
-
-    except Exception as e:
-        st.error("❌ Error during prediction.")
-        st.text(str(e))
-        return {}
+    news_vector = vectorization.transform([news])
+    
+    results = {}
+    if LR: results["Logistic Regression"] = "FAKE" if LR.predict(news_vector)[0] == 0 else "REAL"
+    if DT: results["Decision Tree"] = "FAKE" if DT.predict(news_vector)[0] == 0 else "REAL"
+    if RF: results["Random Forest"] = "FAKE" if RF.predict(news_vector)[0] == 0 else "REAL"
+    if GB: results["Gradient Boosting"] = "FAKE" if GB.predict(news_vector)[0] == 0 else "REAL"
+    
+    return results
 
 # Streamlit UI
-st.set_page_config(page_title="Fake News Detector", layout="centered")
 st.title("📰 Fake News Detector")
 st.markdown("Enter a news article below to detect whether it's **Fake** or **Real** using multiple ML models.")
 
@@ -66,7 +44,6 @@ if st.button("Predict"):
         st.warning("⚠️ Please enter some news content.")
     else:
         predictions = manual_testing(news_input)
-        if predictions:
-            st.subheader("📊 Prediction Results:")
-            for model, result in predictions.items():
-                st.write(f"**{model}**: {result}")
+        st.subheader("🔍 Prediction Results:")
+        for model, result in predictions.items():
+            st.write(f"**{model}**: {result}")
