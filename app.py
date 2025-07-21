@@ -2,24 +2,31 @@ import streamlit as st
 import pickle
 import os
 
-# Load model safely
-def load_model(path):
-    if os.path.exists(path):
-        with open(path, "rb") as file:
-            return pickle.load(file)
-    else:
-        st.error(f"❌ Model file not found: {path}")
+# Safely load model files with error handling
+def load_model(path, name):
+    try:
+        if os.path.exists(path):
+            with open(path, "rb") as file:
+                return pickle.load(file)
+        else:
+            st.warning(f"⚠️ Model file not found: {name}")
+            return None
+    except AttributeError:
+        st.error(f"❌ Failed to load model: {name} — AttributeError (possibly corrupted or incompatible file).")
+        return None
+    except Exception as e:
+        st.error(f"❌ Error loading model {name}: {e}")
         return None
 
 # Get current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Load models and vectorizer
-LR = load_model(os.path.join(current_dir, "lr_model.pkl"))
-DT = load_model(os.path.join(current_dir, "dt_model.pkl"))
-RF = load_model(os.path.join(current_dir, "rf_model.pkl"))
-GB = load_model(os.path.join(current_dir, "gb_model.pkl"))
-vectorization = load_model(os.path.join(current_dir, "vectorizer.pkl"))
+LR = load_model(os.path.join(current_dir, "lr_model.pkl"), "Logistic Regression")
+DT = load_model(os.path.join(current_dir, "dt_model.pkl"), "Decision Tree")
+RF = load_model(os.path.join(current_dir, "rf_model.pkl"), "Random Forest")
+GB = load_model(os.path.join(current_dir, "gb_model.pkl"), "Gradient Boosting")
+vectorization = load_model(os.path.join(current_dir, "vectorizer.pkl"), "TF-IDF Vectorizer")
 
 # Manual testing function
 def manual_testing(news):
@@ -43,7 +50,7 @@ def manual_testing(news):
         return results
 
     except Exception as e:
-        st.error("❌ An error occurred while processing the input.")
+        st.error("❌ Error during prediction.")
         st.text(str(e))
         return {}
 
