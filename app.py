@@ -2,10 +2,9 @@ import streamlit as st
 import pickle
 import numpy as np
 import requests
-import os
 
-# Get the GNews API key from environment variables (Streamlit secrets)
-api_key = os.getenv("GNEWS_API_KEY")
+# Get the GNews API key from Streamlit secrets
+api_key = st.secrets["GNEWS_API_KEY"]
 
 # Load vectorizer and model
 try:
