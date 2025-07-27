@@ -3,18 +3,14 @@ import pickle
 import numpy as np
 import requests
 import os
-from dotenv import load_dotenv
-from pathlib import Path
 
-# Load .env file (for GNews API Key)
-env_path = Path(__file__).parent / '.env'
-load_dotenv(dotenv_path=env_path)
+# Get the GNews API key from environment variables (Streamlit secrets)
 api_key = os.getenv("GNEWS_API_KEY")
 
 # Load vectorizer and model
 try:
     vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
-    lr_model = pickle.load(open("Lr model.pkl", "rb"))  # Your Logistic Regression model
+    lr_model = pickle.load(open("lr_model.pkl", "rb"))  # Logistic Regression model
 except FileNotFoundError as e:
     st.error(f"Model file not found: {e}")
     st.stop()
@@ -64,7 +60,7 @@ if st.button("Fetch & Predict Top News"):
         for i, article in enumerate(articles, start=1):
             title = article.get("title", "No Title")
             description = article.get("description", "")
-            combined = title + " " + description
+            combined = f"{title} {description}"
 
             prediction = predict_news(combined)
 
