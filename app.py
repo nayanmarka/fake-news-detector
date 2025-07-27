@@ -1,73 +1,73 @@
 import streamlit as st
 import pickle
+import numpy as np
+import requests
 import os
+from dotenv import load_dotenv
+from pathlib import Path
 
-# Utility function to load models safely
-def load_model(path, model_name):
-    try:
-        with open(path, "rb") as file:
-            model = pickle.load(file)
-            return model
-    except FileNotFoundError:
-        st.warning(f"⚠ {model_name} model file not found.")
-    except AttributeError as e:
-        st.warning(f"⚠ {model_name} failed to load due to version mismatch.")
-    except Exception as e:
-        st.warning(f"⚠ Could not load {model_name}: {e}")
-    return None
+# Load .env file (for GNews API Key)
+env_path = Path(__file__).parent / '.env'
+load_dotenv(dotenv_path=env_path)
+api_key = os.getenv("GNEWS_API_KEY")
 
-# Get current directory safely (works in Jupyter and scripts)
+# Load vectorizer and model
 try:
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-except NameError:
-    current_dir = os.getcwd()
+    vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
+    lr_model = pickle.load(open("Lr model.pkl", "rb"))  # Your Logistic Regression model
+except FileNotFoundError as e:
+    st.error(f"Model file not found: {e}")
+    st.stop()
 
-# Load vectorizer and models (NO Gradient Boosting)
-vectorizer = load_model(os.path.join(current_dir, "vectorizer.pkl"), "Vectorizer")
-LR = load_model(os.path.join(current_dir, "lr_model.pkl"), "Logistic Regression")
-DT = load_model(os.path.join(current_dir, "dt_model.pkl"), "Decision Tree")
-RF = load_model(os.path.join(current_dir, "rf_model.pkl"), "Random Forest")
+# Title
+st.title("📰 Fake News Detection using ML")
+st.markdown("Get real-time news and detect if it's **Fake** or **Real**.")
 
-# Prediction function
-def manual_testing(news):
-    results = {}
-    if not vectorizer:
-        st.error("❌ Vectorizer not loaded. Cannot proceed.")
-        return results
+# Function to fetch top news headlines
+def fetch_top_news():
+    url = f"https://gnews.io/api/v4/top-headlines?lang=en&country=in&max=5&token={api_key}"
+    try:
+        response = requests.get(url)
+        data = response.json()
+        return data.get("articles", [])
+    except Exception as e:
+        st.error(f"❌ Error fetching news: {e}")
+        return []
 
-    news_vector = vectorizer.transform([news])
+# Function to predict fake/real
+def predict_news(text):
+    transformed_text = vectorizer.transform([text])
+    prediction = lr_model.predict(transformed_text)
+    return "Fake News" if prediction[0] == 0 else "Real News"
 
-    models = {
-        "Logistic Regression": LR,
-        "Decision Tree": DT,
-        "Random Forest": RF,
-    }
+# Option to enter custom news
+st.subheader("✍️ Enter Custom News for Detection")
+user_input = st.text_area("Enter news content here")
 
-    for name, model in models.items():
-        if model:
-            try:
-                pred = model.predict(news_vector)[0]
-                results[name] = "FAKE" if pred == 0 else "REAL"
-            except Exception as e:
-                results[name] = f"❌ Failed: {e}"
-        else:
-            results[name] = "⚠ Not Loaded"
-    return results
-
-# Streamlit UI
-st.title("📰 Fake News Detector")
-st.markdown("Enter a news article below to detect whether it's *Fake* or *Real* using multiple ML models.")
-
-news_input = st.text_area("📝 Enter News Content", height=200)
-
-if st.button("Predict"):
-    if not news_input.strip():
-        st.warning("⚠ Please enter some news content.")
+if st.button("Check News"):
+    if user_input.strip():
+        result = predict_news(user_input)
+        st.success(f"✅ Prediction: {result}")
     else:
-        predictions = manual_testing(news_input)
-        if predictions:
-            st.subheader("🔍 Prediction Results:")
-            for model, result in predictions.items():
-                st.write(f"{model}: {result}")
-        else:
-            st.error("❌ No predictions available.")
+        st.warning("⚠️ Please enter some news content.")
+
+# Divider
+st.markdown("---")
+
+# Option to test real-time GNews headlines
+st.subheader("🌐 Detect Fake News from Live Headlines")
+if st.button("Fetch & Predict Top News"):
+    articles = fetch_top_news()
+    if not articles:
+        st.warning("No news articles found.")
+    else:
+        for i, article in enumerate(articles, start=1):
+            title = article.get("title", "No Title")
+            description = article.get("description", "")
+            combined = title + " " + description
+
+            prediction = predict_news(combined)
+
+            st.markdown(f"**{i}. {title}**")
+            st.markdown(f"*Prediction:* `{prediction}`")
+            st.markdown("---")
