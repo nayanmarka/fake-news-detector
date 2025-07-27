@@ -1,24 +1,33 @@
 import streamlit as st
 import pickle
-import numpy as np
 import requests
 
-# Get the GNews API key from Streamlit secrets
-api_key = st.secrets["GNEWS_API_KEY"]
+# ✅ Securely get GNews API key from Streamlit Secrets
+api_key = st.secrets.get("GNEWS_API_KEY")
 
-# Load vectorizer and model
-try:
-    vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
-    lr_model = pickle.load(open("lr_model.pkl", "rb"))  # Logistic Regression model
-except FileNotFoundError as e:
-    st.error(f"Model file not found: {e}")
+if not api_key:
+    st.error("🚨 GNEWS_API_KEY is missing from Streamlit secrets!")
     st.stop()
 
-# Title
-st.title("📰 Fake News Detection using ML")
-st.markdown("Get real-time news and detect if it's **Fake** or **Real**.")
+# ✅ Load vectorizer and model
+try:
+    vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
+    lr_model = pickle.load(open("lr_model.pkl", "rb"))  # Make sure filename matches
+except FileNotFoundError as e:
+    st.error(f"❌ Model or vectorizer file not found: {e}")
+    st.stop()
 
-# Function to fetch top news headlines
+# ✅ UI Title
+st.title("📰 Fake News Detection using ML")
+st.markdown("Detect whether news is **Real** or **Fake**, including live headlines!")
+
+# ✅ Predict function
+def predict_news(text):
+    transformed_text = vectorizer.transform([text])
+    prediction = lr_model.predict(transformed_text)
+    return "Fake News" if prediction[0] == 0 else "Real News"
+
+# ✅ Fetch live headlines using GNews
 def fetch_top_news():
     url = f"https://gnews.io/api/v4/top-headlines?lang=en&country=in&max=5&token={api_key}"
     try:
@@ -26,16 +35,10 @@ def fetch_top_news():
         data = response.json()
         return data.get("articles", [])
     except Exception as e:
-        st.error(f"❌ Error fetching news: {e}")
+        st.error(f"❌ Failed to fetch news: {e}")
         return []
 
-# Function to predict fake/real
-def predict_news(text):
-    transformed_text = vectorizer.transform([text])
-    prediction = lr_model.predict(transformed_text)
-    return "Fake News" if prediction[0] == 0 else "Real News"
-
-# Option to enter custom news
+# ✅ Manual entry section
 st.subheader("✍️ Enter Custom News for Detection")
 user_input = st.text_area("Enter news content here")
 
@@ -46,22 +49,21 @@ if st.button("Check News"):
     else:
         st.warning("⚠️ Please enter some news content.")
 
-# Divider
+# ✅ Live headlines section
 st.markdown("---")
-
-# Option to test real-time GNews headlines
 st.subheader("🌐 Detect Fake News from Live Headlines")
+
 if st.button("Fetch & Predict Top News"):
     articles = fetch_top_news()
     if not articles:
-        st.warning("No news articles found.")
+        st.warning("⚠️ No news articles fetched.")
     else:
-        for i, article in enumerate(articles, start=1):
+        for i, article in enumerate(articles, 1):
             title = article.get("title", "No Title")
             description = article.get("description", "")
-            combined = f"{title} {description}"
+            full_text = f"{title} {description}"
 
-            prediction = predict_news(combined)
+            prediction = predict_news(full_text)
 
             st.markdown(f"**{i}. {title}**")
             st.markdown(f"*Prediction:* `{prediction}`")
