@@ -25,7 +25,7 @@ st.markdown("Detect whether news is **Real** or **Fake**, including live headlin
 def predict_news(text):
     transformed_text = vectorizer.transform([text])
     prediction = lr_model.predict(transformed_text)
-    return "Fake News" if prediction[0] == 0 else "Real News"
+    return "Real News" if prediction[0] == 0 else "Fake News"
 
 # ✅ Fetch live headlines using GNews
 def fetch_top_news():
